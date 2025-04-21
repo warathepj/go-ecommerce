@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // --- Mock Data ---
 // In a real app, this data would come from an API
@@ -9,15 +9,6 @@ interface Product {
   price: number;
   imageUrl: string;
 }
-
-const mockProducts: Product[] = [
-  { id: 1, name: 'Wireless Mouse', description: 'Ergonomic wireless mouse with long battery life.', price: 25.99, imageUrl: 'https://placehold.co/300x200/e2e8f0/64748b?text=Wireless+Mouse' },
-  { id: 2, name: 'Mechanical Keyboard', description: 'RGB backlit mechanical keyboard with blue switches.', price: 79.99, imageUrl: 'https://placehold.co/300x200/e2e8f0/64748b?text=Mechanical+Keyboard' },
-  { id: 3, name: 'USB-C Hub', description: '7-in-1 USB-C hub with HDMI, SD card reader, and USB 3.0 ports.', price: 35.50, imageUrl: 'https://placehold.co/300x200/e2e8f0/64748b?text=USB-C+Hub' },
-  { id: 4, name: 'Laptop Stand', description: 'Adjustable aluminum laptop stand for better ergonomics.', price: 22.00, imageUrl: 'https://placehold.co/300x200/e2e8f0/64748b?text=Laptop+Stand' },
-  { id: 5, name: 'Webcam 1080p', description: 'Full HD 1080p webcam with built-in microphone.', price: 45.99, imageUrl: 'https://placehold.co/300x200/e2e8f0/64748b?text=Webcam' },
-  { id: 6, name: 'Bluetooth Speaker', description: 'Portable waterproof Bluetooth speaker with rich bass.', price: 55.00, imageUrl: 'https://placehold.co/300x200/e2e8f0/64748b?text=Bluetooth+Speaker' },
-];
 
 // --- Types ---
 interface CartItem extends Product {
@@ -298,9 +289,30 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onPlaceOrder }) => {
 
 // --- Main App Component ---
 function App() {
+  const [products, setProducts] = useState<Product[]>([]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [currentView, setCurrentView] = useState<View>('products'); // 'products', 'cart', 'checkout'
-  const [products] = useState<Product[]>(mockProducts); // In real app, fetch this
+  const [currentView, setCurrentView] = useState<View>('products');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/products');
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        const data = await response.json();
+        setProducts(data);
+        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch products');
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   // --- Cart Logic ---
   const handleAddToCart = (productToAdd: Product) => {
@@ -377,7 +389,13 @@ function App() {
       {/* Main Content Area */}
       <main className="container mx-auto px-4 py-8">
         {currentView === 'products' && (
-          <ProductList products={products} onAddToCart={handleAddToCart} />
+          <>
+            {isLoading && <p className="text-center">Loading products...</p>}
+            {error && <p className="text-center text-red-500">{error}</p>}
+            {!isLoading && !error && (
+              <ProductList products={products} onAddToCart={handleAddToCart} />
+            )}
+          </>
         )}
         {currentView === 'cart' && (
           <ShoppingCart
