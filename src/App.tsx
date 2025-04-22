@@ -278,7 +278,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onPlaceOrder }) => {
             />
           </div>
           <Button type="submit" size="lg" className="w-full">
-            Place Order (Simulated)
+            Place Order
           </Button>
         </form>
       </CardContent>
@@ -298,7 +298,7 @@ function App() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/products');
+        const response = await fetch('/api/products');
         if (!response.ok) {
           throw new Error('Failed to fetch products');
         }
@@ -351,17 +351,39 @@ function App() {
   };
 
   // --- Checkout Logic ---
-  const handlePlaceOrder = (details: { name: string; address: string }) => {
-    console.log('Placing order with details:', details);
-    console.log('Cart:', cartItems);
-    // In a real app:
-    // 1. Send order data (details + cartItems) to the backend API
-    // 2. Handle API response (success/error)
-    // 3. Clear the cart
-    // 4. Show an order confirmation message/page
-    alert(`Order placed successfully for ${details.name}! (Simulated)`);
-    setCartItems([]);
-    setCurrentView('products'); // Go back to products page
+  const handlePlaceOrder = async (details: { name: string; address: string }) => {
+    try {
+      const orderData = {
+        userDetails: details,
+        items: cartItems.map(item => ({
+          productId: item.id,
+          quantity: item.quantity,
+          priceAtTime: item.price
+        })),
+        subtotal: cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+        tax: cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0) * 0.1, // 10% tax
+        total: cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0) * 1.1 // subtotal + tax
+      };
+
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to place order');
+      }
+
+      const result = await response.json();
+      alert(`Order placed successfully! Order ID: ${result.orderId}`);
+      setCartItems([]);
+      setCurrentView('products');
+    } catch (err) {
+      alert('Failed to place order: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
   };
 
   // --- Navigation ---
