@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Address } from './types/schema';
 
 // --- Mock Data ---
 // In a real app, this data would come from an API
@@ -215,22 +216,37 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cartItems, onRemoveFromCart
 // Checkout Component
 interface CheckoutProps {
   cartItems: CartItem[];
-  onPlaceOrder: (details: { name: string; address: string }) => void;
+  onPlaceOrder: (details: { name: string; address: Address }) => void;
 }
 
 const Checkout: React.FC<CheckoutProps> = ({ cartItems, onPlaceOrder }) => {
   const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
+  // Replace single address field with structured address
+  const [address, setAddress] = useState<Address>({
+    street: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: ''
+  });
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !address) {
-      // Basic validation - In a real app, use a library like react-hook-form
-      alert('Please fill in both name and address.');
+    if (!name || !address.street || !address.city || !address.state || !address.postalCode || !address.country) {
+      // Enhanced validation for all address fields
+      alert('Please fill in all required fields.');
       return;
     }
     onPlaceOrder({ name, address });
+  };
+
+  // Handle address field changes
+  const handleAddressChange = (field: keyof Address, value: string) => {
+    setAddress(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   return (
@@ -266,17 +282,76 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onPlaceOrder }) => {
               placeholder="Enter your full name"
             />
           </div>
-          <div>
-            <Label htmlFor="address">Shipping Address</Label>
-            <Input
-              id="address"
-              type="text" // Use <Textarea> from shadcn for multi-line
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-              placeholder="Enter your shipping address"
-            />
+          
+          {/* Structured address fields */}
+          <div className="space-y-4">
+            <h4 className="font-semibold">Shipping Address</h4>
+            
+            <div>
+              <Label htmlFor="street">Street Address</Label>
+              <Input
+                id="street"
+                type="text"
+                value={address.street}
+                onChange={(e) => handleAddressChange('street', e.target.value)}
+                required
+                placeholder="Street address"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  type="text"
+                  value={address.city}
+                  onChange={(e) => handleAddressChange('city', e.target.value)}
+                  required
+                  placeholder="City"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="state">State/Province</Label>
+                <Input
+                  id="state"
+                  type="text"
+                  value={address.state}
+                  onChange={(e) => handleAddressChange('state', e.target.value)}
+                  required
+                  placeholder="State or province"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="postalCode">Postal Code</Label>
+                <Input
+                  id="postalCode"
+                  type="text"
+                  value={address.postalCode}
+                  onChange={(e) => handleAddressChange('postalCode', e.target.value)}
+                  required
+                  placeholder="Postal code"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="country">Country</Label>
+                <Input
+                  id="country"
+                  type="text"
+                  value={address.country}
+                  onChange={(e) => handleAddressChange('country', e.target.value)}
+                  required
+                  placeholder="Country"
+                />
+              </div>
+            </div>
           </div>
+          
           <Button type="submit" size="lg" className="w-full">
             Place Order
           </Button>
@@ -351,18 +426,21 @@ function App() {
   };
 
   // --- Checkout Logic ---
-  const handlePlaceOrder = async (details: { name: string; address: string }) => {
+  const handlePlaceOrder = async (details: { name: string; address: Address }) => {
     try {
       const orderData = {
-        userDetails: details,
+        userDetails: {
+          name: details.name,
+          address: details.address  // Send the full address structure
+        },
         items: cartItems.map(item => ({
           productId: item.id,
           quantity: item.quantity,
           priceAtTime: item.price
         })),
         subtotal: cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
-        tax: cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0) * 0.1, // 10% tax
-        total: cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0) * 1.1 // subtotal + tax
+        tax: cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0) * 0.1,
+        total: cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0) * 1.1
       };
 
       const response = await fetch('/api/orders', {
