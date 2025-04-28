@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Address } from './types/schema';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import Admin from './pages/Admin';
 
 // --- Mock Data ---
 // In a real app, this data would come from an API
@@ -363,7 +365,8 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onPlaceOrder }) => {
 
 
 // --- Main App Component ---
-function App() {
+function AppContent() {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [currentView, setCurrentView] = useState<View>('products');
@@ -477,9 +480,12 @@ function App() {
       {/* Header/Navbar */}
       <header className="bg-white shadow-md sticky top-0 z-10">
         <nav className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className="text-2xl font-bold cursor-pointer" onClick={() => navigateTo('products')}>
+          <h1 className="text-2xl font-bold cursor-pointer" onClick={() => navigate('/')}>
             MyStore
           </h1>
+          <Button onClick={() => window.location.href = '/admin'}>
+            Admin Demo
+          </Button>
           <Button onClick={() => navigateTo('cart')}>
             Cart ({cartItemCount})
           </Button>
@@ -487,34 +493,47 @@ function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="container mx-auto px-4 py-8">
-        {currentView === 'products' && (
-          <>
-            {isLoading && <p className="text-center">Loading products...</p>}
-            {error && <p className="text-center text-red-500">{error}</p>}
-            {!isLoading && !error && (
-              <ProductList products={products} onAddToCart={handleAddToCart} />
+      <Routes>
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/" element={
+          <main className="container mx-auto px-4 py-8">
+            {currentView === 'products' && (
+              <>
+                {isLoading && <p className="text-center">Loading products...</p>}
+                {error && <p className="text-center text-red-500">{error}</p>}
+                {!isLoading && !error && (
+                  <ProductList products={products} onAddToCart={handleAddToCart} />
+                )}
+              </>
             )}
-          </>
-        )}
-        {currentView === 'cart' && (
-          <ShoppingCart
-            cartItems={cartItems}
-            onRemoveFromCart={handleRemoveFromCart}
-            onUpdateQuantity={handleUpdateQuantity}
-            onProceedToCheckout={() => navigateTo('checkout')}
-          />
-        )}
-        {currentView === 'checkout' && (
-          <Checkout cartItems={cartItems} onPlaceOrder={handlePlaceOrder} />
-        )}
-      </main>
+            {currentView === 'cart' && (
+              <ShoppingCart
+                cartItems={cartItems}
+                onRemoveFromCart={handleRemoveFromCart}
+                onUpdateQuantity={handleUpdateQuantity}
+                onProceedToCheckout={() => navigateTo('checkout')}
+              />
+            )}
+            {currentView === 'checkout' && (
+              <Checkout cartItems={cartItems} onPlaceOrder={handlePlaceOrder} />
+            )}
+          </main>
+        } />
+      </Routes>
 
       {/* Footer */}
       <footer className="bg-gray-800 text-white text-center p-4 mt-12">
         <p>&copy; 2025 MyStore. All rights reserved.</p>
       </footer>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 
