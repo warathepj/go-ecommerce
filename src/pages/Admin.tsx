@@ -5,10 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Product } from '@/types/schema'
+import { Product, Sku } from '@/types/schema'
 
 const Admin = () => {
   const [isOpen, setIsOpen] = useState(false)
+  const [isSkuOpen, setIsSkuOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
     name: '',
@@ -16,6 +17,11 @@ const Admin = () => {
     price: 0,
     imageUrl: '',
     category: '',
+    sku: '',
+    stockQuantity: 0
+  })
+  const [newSku, setNewSku] = useState<Partial<Sku>>({
+    productId: 0,
     sku: '',
     stockQuantity: 0
   })
@@ -63,6 +69,58 @@ const Admin = () => {
       ...prev,
       [name]: name === 'price' || name === 'stockQuantity' ? Number(value) : value
     }))
+  }
+
+  const handleSkuChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setNewSku(prev => ({
+      ...prev,
+      [name]: name === 'stockQuantity' || name === 'productId' ? Number(value) : value
+    }))
+  }
+
+  const handleSkuSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/skus', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newSku),
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to add SKU: ${response.statusText}`)
+      }
+      
+      // Check content type before parsing JSON
+      const contentType = response.headers.get("content-type")
+      let result
+      if (contentType && contentType.includes("application/json")) {
+        result = await response.json()
+      } else {
+        // Handle non-JSON response
+        const text = await response.text()
+        console.log("Non-JSON response:", text)
+        result = { message: "SKU added successfully" }
+      }
+      
+      alert('SKU added successfully!')
+      setIsSkuOpen(false)
+      // Reset form
+      setNewSku({
+        productId: 0,
+        sku: '',
+        stockQuantity: 0
+      })
+    } catch (error) {
+      console.error('Error adding SKU:', error)
+      alert(error instanceof Error ? error.message : 'Failed to add SKU')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -158,6 +216,60 @@ const Admin = () => {
                     disabled={isLoading}
                   >
                     {isLoading ? 'Saving...' : 'Save Product'}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isSkuOpen} onOpenChange={setIsSkuOpen}>
+              <DialogTrigger asChild>
+                <Button>Add SKU</Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Add New SKU</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSkuSubmit} className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="productId">Product ID</Label>
+                    <Input
+                      id="productId"
+                      name="productId"
+                      type="number"
+                      value={newSku.productId}
+                      onChange={handleSkuChange}
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="sku">SKU Code</Label>
+                    <Input
+                      id="sku"
+                      name="sku"
+                      value={newSku.sku}
+                      onChange={handleSkuChange}
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="stockQuantity">Stock Quantity</Label>
+                    <Input
+                      id="stockQuantity"
+                      name="stockQuantity"
+                      type="number"
+                      value={newSku.stockQuantity}
+                      onChange={handleSkuChange}
+                      required
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading}
+                    onClick={() => {
+                      console.log('SKU data being submitted:', newSku);
+                    }}
+                  >
+                    {isLoading ? 'Saving...' : 'Save SKU'}
                   </Button>
                 </form>
               </DialogContent>

@@ -6,8 +6,16 @@ export interface Product {
   price: number;
   imageUrl: string;
   category?: string;
-  sku?: string;
-  stockQuantity?: number;
+  sku?: Sku;  // Reference to the SKU object
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Sku {
+  id: number;      // This should be the same as Product.id
+  productId: number; // Foreign key reference to Product.id
+  sku: string;     // The actual SKU code
+  stockQuantity: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
