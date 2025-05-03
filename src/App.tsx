@@ -94,28 +94,88 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
+  const [showDetail, setShowDetail] = useState(false);
+  
   return (
-    <Card className="overflow-hidden">
-      <img
-        src={product.imageUrl}
-        alt={product.name}
-        className="h-48 w-full object-cover"
-        // Basic fallback for placeholder images
-        onError={(e) => (e.currentTarget.src = `https://placehold.co/300x200/fecaca/991b1b?text=Image+Error`)}
-      />
-      <CardHeader>
-        <CardTitle>{product.name}</CardTitle>
-        <CardDescription className="h-10 overflow-hidden">{product.description}</CardDescription> {/* Fixed height */}
-      </CardHeader>
-      <CardContent>
-        <p className="text-lg font-semibold">${product.price.toFixed(2)}</p>
-      </CardContent>
-      <CardFooter>
-        <Button onClick={() => onAddToCart(product)} className="w-full">
-          Add to Cart
-        </Button>
-      </CardFooter>
-    </Card>
+    <>
+      <Card className="overflow-hidden cursor-pointer">
+        <div onClick={() => setShowDetail(true)}>
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="h-48 w-full object-cover"
+            // Basic fallback for placeholder images
+            onError={(e) => (e.currentTarget.src = `https://placehold.co/300x200/fecaca/991b1b?text=Image+Error`)}
+          />
+          <CardHeader>
+            <CardTitle>{product.name}</CardTitle>
+            <CardDescription className="h-10 overflow-hidden">{product.description}</CardDescription> {/* Fixed height */}
+          </CardHeader>
+          <CardContent>
+            <p className="text-lg font-semibold">${product.price.toFixed(2)}</p>
+          </CardContent>
+        </div>
+        <CardFooter>
+          <Button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToCart(product);
+            }} 
+            className="w-full"
+          >
+            Add to Cart
+          </Button>
+        </CardFooter>
+      </Card>
+      
+      {/* Product Detail Modal */}
+      {showDetail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <pre>sku</pre>
+
+                <h2 className="text-2xl font-bold">{product.name}</h2>
+                <button 
+                  onClick={() => setShowDetail(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <img 
+                  src={product.imageUrl} 
+                  alt={product.name}
+                  className="w-full h-64 object-cover rounded-lg"
+                  onError={(e) => (e.currentTarget.src = `https://placehold.co/600x400/fecaca/991b1b?text=Image+Error`)}
+                />
+                
+                <div>
+                  <p className="text-gray-700 mb-4">{product.description}</p>
+                  <p className="text-2xl font-bold mb-6">${product.price.toFixed(2)}</p>
+                  
+                  <Button 
+                    onClick={() => {
+                      onAddToCart(product);
+                      setShowDetail(false);
+                    }}
+                    size="lg"
+                    className="w-full"
+                  >
+                    Add to Cart
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
