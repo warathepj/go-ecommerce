@@ -123,6 +123,45 @@ const Admin = () => {
     }
   }
 
+  const [products, setProducts] = useState<Product[]>([])
+
+  // Add this new function to fetch products
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('/api/products')
+      if (!response.ok) {
+        throw new Error(`Failed to fetch products: ${response.statusText}`)
+      }
+      const data = await response.json()
+      setProducts(data)
+    } catch (error) {
+      console.error('Error fetching products:', error)
+    }
+  }
+
+  // Add this state for SKUs (after the products state)
+  const [skus, setSkus] = useState<Sku[]>([])
+
+  // Add this function to fetch SKUs
+  const fetchSkus = async () => {
+    try {
+      const response = await fetch('/api/skus')
+      if (!response.ok) {
+        throw new Error(`Failed to fetch SKUs: ${response.statusText}`)
+      }
+      const data = await response.json()
+      setSkus(data)
+    } catch (error) {
+      console.error('Error fetching SKUs:', error)
+    }
+  }
+
+  // Update useEffect to fetch both products and SKUs
+  React.useEffect(() => {
+    fetchProducts()
+    fetchSkus()
+  }, [])
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Card>
@@ -278,7 +317,19 @@ const Admin = () => {
         </CardContent>
       </Card>
 
-      <pre></pre>
+      <div className="mt-8">
+        <h2 className="text-xl font-bold mb-4">All Products</h2>
+        <pre className="bg-gray-100 p-4 rounded overflow-auto max-h-[500px]">
+          {JSON.stringify(products, null, 2)}
+        </pre>
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-xl font-bold mb-4">All SKUs</h2>
+        <pre className="bg-gray-100 p-4 rounded overflow-auto max-h-[500px]">
+          {JSON.stringify(skus, null, 2)}
+        </pre>
+      </div>
     </div>
   )
 }
